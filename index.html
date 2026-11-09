@@ -151,7 +151,7 @@
 <div class="bar">
   <span class="count">Vendidos: <b id="soldCount">0</b>/100</span>
   <button class="btn btn-primary" id="printBtn" type="button">📸 Tirar print</button>
-  <a class="btn btn-whats" id="whatsBtn" href="#" target="_blank" rel="noopener">💬 WhatsApp</a>
+  <button class="btn btn-whats" id="whatsBtn" type="button">💬 WhatsApp</button>
   <button class="btn" id="copyBtn" type="button">Copiar Pix</button>
   <button class="btn" id="orgToggleBtn" type="button">🔒 Organizador</button>
   <button class="btn btn-gold" id="orgExitBtn" type="button" hidden>🔓 Organizador · sair</button>
@@ -321,7 +321,30 @@
 
   var textoWhats = "Participa da minha Rifa Solidária! 🍫 Cesta de Chocolate por R$ 10,00 o número. " +
     "Pix: 15976009764 (Eduardo Ayres). Me chama o número que você quer!";
-  document.getElementById("whatsBtn").href = "https://wa.me/?text=" + encodeURIComponent(textoWhats);
+  document.getElementById("whatsBtn").addEventListener("click", function () {
+    var btn = this;
+    btn.disabled = true;
+    mostrarToast("Gerando o print...");
+    var link = "https://wa.me/?text=" + encodeURIComponent(textoWhats);
+    html2canvas(board, { backgroundColor: null, scale: 2, useCORS: true })
+      .then(function (canvas) {
+        return new Promise(function (res) { canvas.toBlob(res, "image/png"); });
+      })
+      .then(function (blob) {
+        var file = new File([blob], "rifa-eduardo.png", { type: "image/png" });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          return navigator.share({ files: [file], text: textoWhats });
+        }
+        window.open(link, "_blank");
+        mostrarToast("Este navegador não anexa a imagem. Use 'Tirar print' e anexe no WhatsApp.");
+      })
+      .catch(function (e) {
+        if (e && e.name === "AbortError") return;
+        window.open(link, "_blank");
+        mostrarToast("Não deu pra anexar o print. Use 'Tirar print' e anexe no WhatsApp.");
+      })
+      .then(function () { btn.disabled = false; });
+  });
 
   var printOverlay = document.getElementById("printOverlay");
   var printImg = document.getElementById("printImg");
